@@ -1,5 +1,6 @@
 import cv2 #Importacion de OpecCv
 import mediapipe as mp #Importacion mediaPipe
+import math
 
 mp_drawing = mp.solutions.drawing_utils #Esta linea nos permite acceder a todas las funciones que ofrece MediaPipe 
                                         #para dibujar nuestros landmarks y conexciones de estas
@@ -11,44 +12,46 @@ mp_drawing = mp.solutions.drawing_utils #Esta linea nos permite acceder a todas 
 mp_pose = mp.solutions.pose #Esta linea nos permite hacer uso del pose estimation de MediaPipe, que fue diseñada para 
                             #detectar y estimar la postura del cuerpo humano en imagenes o videos
 
-def resize_image(image, max_width=800, max_height=600):
-    height, width = image.shape[:2]
+window_width = 1270
+window_height = 720
 
-    # Calcula la relación de aspecto
-    aspect_ratio = width / height
-
-    if width > max_width:
-        width = max_width
-        height = int(width / aspect_ratio)
-
-    if height > max_height:
-        height = max_height
-        width = int(height * aspect_ratio)
-
-    return cv2.resize(image, (width, height))
+def calcular_angulo(point1, point2, point3):
+    angulo = math.degrees(math.atan2(point3[1] - point2[1], point3[0] - point2[0]) -
+                         math.atan2(point1[1] - point2[1], point1[0] - point2[0]))
+    return angulo + 180 if angulo < 0 else angulo
 
 def tracking_especifico(image, results, width, height):
 
-        #Aqui vamos a imprimir las coordenadas x,y de un punto detectado en la imagen por ejemplo el codo izquierdo
         print(int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_ELBOW].x * width))
-        x1 = int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_ELBOW].x * width) #Coordenada en X
-        y1 = int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_ELBOW].y * height)#Coordenada en Y
+        right_elbow = (int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_ELBOW].x * width),
+                       int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_ELBOW].y * height))#Coordenada en Y)
         
-        #Aqui vamos a dibujar el punto en la mano izquierda
         print(int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_WRIST].x * width))
-        x2 = int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_WRIST].x * width) #Coordenada en X
-        y2 = int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_WRIST].y * height)#Coordenada en Y
+        right_wrist = (int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_WRIST].x * width),
+                       int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_WRIST].y * height))
 
         #Aqui vamos a dibujar el punto en la mano izquierda
-        x3 = int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER].x * width) #Coordenada en X
-        y3 = int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER].y * height)#Coordenada en Y
+        right_shoulder = (int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER].x * width),
+                          int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER].y * height))
 
 
-        cv2.circle(image, (x1, y1), 10, (225, 0, 0), -1)#Dibujamos el punto despues de obtener sus coordenadas
-        cv2.circle(image, (x2, y2), 10, (225, 40, 57), -1)#Dibujamos el punto despues de obtener sus coordenadas
-        cv2.circle(image, (x3, y3), 10, (225, 40, 57), -1)
-        cv2.line(image, (x3, y3), (x1, y1), (225, 225, 225), 3)#Dibujamos las conexiones entre los puntos
-        cv2.line(image, (x1, y1), (x2, y2), (225, 225, 225), 3)
+        cv2.circle(image, right_elbow, 10, (225, 0, 0), -1)#Dibujamos el punto despues de obtener sus coordenadas
+        cv2.circle(image, right_wrist, 10, (225, 40, 57), -1)#Dibujamos el punto despues de obtener sus coordenadas
+        cv2.circle(image, right_shoulder, 10, (225, 40, 57), -1)
+        cv2.line(image, right_shoulder, right_elbow, (225, 225, 225), 3)#Dibujamos las conexiones entre los puntos
+        cv2.line(image, right_elbow, right_wrist, (225, 225, 225), 3)
+
+        right_arm_angle = calcular_angulo(right_shoulder, right_elbow, right_wrist)
+        #left_arm_angle = calcular_angulo(left_shoulder, left_elbow, left_wrist)
+
+        cv2.putText(image, str(int(right_arm_angle)), right_elbow, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+        #cv2.putText(image, str(int(left_arm_angle)), left_elbow, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+
+        if -120 <= right_arm_angle <= -110: #and -110 <= left_arm_angle <= -120:
+            cv2.putText(image, "Good Form", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 5, cv2.LINE_AA)
+        else:
+            cv2.putText(image, "Bad Form", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 5, cv2.LINE_AA)
+
 
 def tracking_global(image, results):
 
@@ -71,7 +74,7 @@ def main():
     with mp_pose.Pose(static_image_mode=True) as pose:
         while True:
             image = cv2.imread("media\ORIGINAL_0107d4748c9cb833a3b1874ab0927372.jpg")
-            image = resize_image(image)
+            image = cv2.resize(image, (window_width, window_height))
             height, width, _ = image.shape
             image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
