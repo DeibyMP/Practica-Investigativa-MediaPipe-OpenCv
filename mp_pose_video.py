@@ -62,7 +62,7 @@ def tracking_especifico(frame, results, width, height):
     left_arm_angle = calcular_angulo(left_shoulder, left_elbow, left_wrist)
 
     #Con las dos siguientes lineas imprimimos en la ventana un pequeño mensaje 
-    # que nos permita saber si el ejercicio se esta realizadon bien o mal.
+    # que nos permita saber el angulo que se esta calculando mientras se desarrolla el ejercicio.
     cv2.putText(frame, str(int(right_arm_angle)), right_elbow, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
     cv2.putText(frame, str(int(left_arm_angle)), left_elbow, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
 
