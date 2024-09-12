@@ -1,5 +1,6 @@
 import cv2
 import mediapipe as mp
+import math
 
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
@@ -9,38 +10,69 @@ cap = cv2.VideoCapture("media/5262396-uhd_3840_2160_25fps.mp4")
 window_width = 1270
 window_height = 720
 
+#Nuestra funcion calcular_angulo, por medio de la libreria math, resta de los angulos formados 
+#por los segmentos (RIGHT_SHOULDER, RIGHT_ELBOW) y (RIGHT_ELBOW, RIGHT_WRIST), 
+#calculando el angulo que forma la conexion total del brazo derecho en el eje x 
+#convirtiendo la resta de radianes a grados con math.degress.
+#math.atan2 nos permite calcular el angulo formado por cada segmento en radianes.
+
+
+def calcular_angulo(point1, point2, point3):
+    angulo = math.degrees(math.atan2(point3[1] - point2[1], point3[0] - point2[0]) -
+                         math.atan2(point1[1] - point2[1], point1[0] - point2[0]))
+    return angulo + 180 if angulo < 0 else angulo #Con esta linea nos aseguramos de ajustar que el calculo del angulo sea positivo.
+
+
 def tracking_especifico(frame, results, width, height):
-    x1 = int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER].x * width)
-    y1 = int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER].y * height)
+    right_shoulder = (int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER].x * width),
+                      int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER].y * height))
 
-    x2 = int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_ELBOW].x * width)
-    y2 = int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_ELBOW].y * height)
+    right_elbow = (int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_ELBOW].x * width),
+                   int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_ELBOW].y * height))
 
-    x3 = int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_WRIST].x * width)
-    y3 = int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_WRIST].y * height)
+    right_wrist = (int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_WRIST].x * width),
+                   int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_WRIST].y * height))
 
-    x4 = int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER].x * width)
-    y4 = int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER].y * height)
+    left_shoulder = (int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER].x * width),
+                     int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER].y * height))
 
-    x5 = int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_ELBOW].x * width)
-    y5 = int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_ELBOW].y * height)
+    left_elbow = (int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_ELBOW].x * width),
+                  int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_ELBOW].y * height))
 
-    x6 = int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_WRIST].x * width)
-    y6 = int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_WRIST].y * height)
+    left_wrist = (int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_WRIST].x * width),
+                  int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_WRIST].y * height))
 
-    cv2.circle(frame, (x1, y1), 10, (225, 0, 0), -1)
-    cv2.circle(frame, (x2, y2), 10, (225, 0, 0), -1)
-    cv2.circle(frame, (x3, y3), 10, (225, 0, 0), -1)
+    cv2.circle(frame, right_shoulder, 10, (225, 0, 0), -1)
+    cv2.circle(frame, right_elbow, 10, (225, 0, 0), -1)
+    cv2.circle(frame, right_wrist, 10, (225, 0, 0), -1)
 
-    cv2.line(frame, (x1, y1), (x2, y2), (225, 225, 225), 3)
-    cv2.line(frame, (x2, y2), (x3, y3), (225, 225, 225), 3)
+    cv2.circle(frame, left_shoulder, 10, (225, 0, 0), -1)
+    cv2.circle(frame, left_elbow, 10, (225, 0, 0), -1)
+    cv2.circle(frame, left_wrist, 10, (225, 0, 0), -1)
 
-    cv2.circle(frame, (x4, y4), 10, (225, 0, 0), -1)
-    cv2.circle(frame, (x5, y5), 10, (225, 0, 0), -1)
-    cv2.circle(frame, (x6, y6), 10, (225, 0, 0), -1)
+    cv2.line(frame, right_shoulder, right_elbow, (225, 225, 225), 3)
+    cv2.line(frame, right_elbow, right_wrist, (225, 225, 225), 3)
+    cv2.line(frame, left_shoulder, left_elbow, (225, 225, 225), 3)
+    cv2.line(frame, left_elbow, left_wrist, (225, 225, 225), 3)
 
-    cv2.line(frame, (x4, y4), (x5, y5), (225, 225, 225), 3)
-    cv2.line(frame, (x5, y5), (x6, y6), (225, 225, 225), 3)
+
+    #Con right_arm_angle y left_arm_angle, invocamos a la funcion calcular_angulo 
+    # para que realice el respectivo calculo de estos.
+    right_arm_angle = calcular_angulo(right_shoulder, right_elbow, right_wrist)
+    left_arm_angle = calcular_angulo(left_shoulder, left_elbow, left_wrist)
+
+    #Con las dos siguientes lineas imprimimos en la ventana un pequeño mensaje 
+    # que nos permita saber si el ejercicio se esta realizadon bien o mal.
+    cv2.putText(frame, str(int(right_arm_angle)), right_elbow, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(frame, str(int(left_arm_angle)), left_elbow, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+
+    #Con esta sentencia If-else, validamos cual de los dos mensajes imprimir en 
+    #pantalla basandose en el calculo continuo de los angulos.
+    if -10 <= right_arm_angle <= 0 and 0 <= left_arm_angle <= 10:
+        cv2.putText(frame, "Good Form", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 5, cv2.LINE_AA)
+    else:
+        cv2.putText(frame, "Bad Form", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 5, cv2.LINE_AA)
+
 
 def main():
     
