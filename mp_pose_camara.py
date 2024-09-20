@@ -1,78 +1,97 @@
 import cv2
 import mediapipe as mp
-import math
+import numpy as np
+from math import acos, degrees
 
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
 
 cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
-window_width = 1270
-window_height = 720
+window_width = 1600
+window_height = 1050
 
-#Nuestra funcion calcular_angulo, por medio de la libreria math, resta de los angulos formados 
-#por los segmentos (RIGHT_SHOULDER, RIGHT_ELBOW) y (RIGHT_ELBOW, RIGHT_WRIST), 
-#calculando el angulo que forma la conexion total del brazo derecho en el eje x 
-#convirtiendo la resta de radianes a grados con math.degress.
-#math.atan2 nos permite calcular el angulo formado por cada segmento en radianes.
+up = False
+down = False
+count = 0
 
-
-def calcular_angulo(point1, point2, point3):
-    angulo = math.degrees(math.atan2(point3[1] - point2[1], point3[0] - point2[0]) -
-                         math.atan2(point1[1] - point2[1], point1[0] - point2[0]))
-    return angulo + 180 if angulo < 0 else angulo #Con esta linea nos aseguramos de ajustar que el calculo del angulo sea positivo.
-
+#Deteccion y Dibujo de las marcas
 
 def tracking_especifico(frame, results, width, height):
-    right_shoulder = (int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER].x * width),
-                      int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER].y * height))
 
-    right_elbow = (int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_ELBOW].x * width),
-                   int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_ELBOW].y * height))
+    global count, up, down
 
-    right_wrist = (int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_WRIST].x * width),
-                   int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_WRIST].y * height))
+    x1 = int(results.pose_landmarks.landmark[11].x * width)
+    y1 = int(results.pose_landmarks.landmark[11].y * height)
 
-    left_shoulder = (int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER].x * width),
-                     int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER].y * height))
+    x2 = int(results.pose_landmarks.landmark[13].x * width)
+    y2 = int(results.pose_landmarks.landmark[13].y * height)
 
-    left_elbow = (int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_ELBOW].x * width),
-                  int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_ELBOW].y * height))
+    x3 = int(results.pose_landmarks.landmark[15].x * width)
+    y3 = int(results.pose_landmarks.landmark[15].y * height)
 
-    left_wrist = (int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_WRIST].x * width),
-                  int(results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_WRIST].y * height))
+    x4 = int(results.pose_landmarks.landmark[12].x * width)
+    y4 = int(results.pose_landmarks.landmark[12].y * height)
 
-    cv2.circle(frame, right_shoulder, 10, (225, 0, 0), -1)
-    cv2.circle(frame, right_elbow, 10, (225, 0, 0), -1)
-    cv2.circle(frame, right_wrist, 10, (225, 0, 0), -1)
+    x5 = int(results.pose_landmarks.landmark[14].x * width)
+    y5 = int(results.pose_landmarks.landmark[14].y * height)
 
-    cv2.circle(frame, left_shoulder, 10, (225, 0, 0), -1)
-    cv2.circle(frame, left_elbow, 10, (225, 0, 0), -1)
-    cv2.circle(frame, left_wrist, 10, (225, 0, 0), -1)
+    x6 = int(results.pose_landmarks.landmark[16].x * width)
+    y6 = int(results.pose_landmarks.landmark[16].y * height)
 
-    cv2.line(frame, right_shoulder, right_elbow, (225, 225, 225), 3)
-    cv2.line(frame, right_elbow, right_wrist, (225, 225, 225), 3)
-    cv2.line(frame, left_shoulder, left_elbow, (225, 225, 225), 3)
-    cv2.line(frame, left_elbow, left_wrist, (225, 225, 225), 3)
+    #cv2.circle(frame, (x1, y1), 10, (225, 0, 0), -1)
+    #cv2.circle(frame, (x2, y2), 10, (225, 0, 0), -1)
+    #cv2.circle(frame, (x3, y3), 10, (225, 0, 0), -1)
 
+    #cv2.circle(frame, (x4, y4), 10, (252, 252, 252), -1)
+    #cv2.circle(frame, (x5, y5), 10, (252, 252, 252), -1)
+    #cv2.circle(frame, (x6, y6), 10, (252, 252, 252), -1)
 
-    #Con right_arm_angle y left_arm_angle, invocamos a la funcion calcular_angulo 
-    # para que realice el respectivo calculo de estos.
-    right_arm_angle = calcular_angulo(right_shoulder, right_elbow, right_wrist)
-    left_arm_angle = calcular_angulo(left_shoulder, left_elbow, left_wrist)
+    #cv2.line(frame, (x1, y1), (x2, y2), (255, 34, 2), 3)
+    #cv2.line(frame, (x2, y2), (x3, y3), (255, 34, 2), 3)
+    #cv2.line(frame, (x3, y3), (x1, y1), (255, 34, 2), 3)
+    #cv2.line(frame, (x4, y4), (x5, y5), (255, 242, 204), 3)
+    #cv2.line(frame, (x5, y5), (x6, y6), (255, 242, 204), 3)
+    #cv2.line(frame, (x6, y6), (x4, y4), (252, 252, 252), 3)
 
-    #Con las dos siguientes lineas imprimimos en la ventana un pequeño mensaje 
-    # que nos permita saber el angulo que se esta calculando mientras se desarrolla el ejercicio.
-    cv2.putText(frame, str(int(right_arm_angle)), right_elbow, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-    cv2.putText(frame, str(int(left_arm_angle)), left_elbow, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+    point1 = np.array([x1, y1])
+    point2 = np.array([x2, y2])
+    point3 = np.array([x3, y3])
 
-    #Con esta sentencia If-else, validamos cual de los dos mensajes imprimir en 
-    #pantalla basandose en el calculo continuo de los angulos.
-    if -30 <= right_arm_angle <= 10 and -30 <= left_arm_angle <= 10:
-        cv2.putText(frame, "Good Form", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 5, cv2.LINE_AA)
+    point4 = np.array([x4, y4])
+    point5 = np.array([x5, y5])
+    point6 = np.array([x6, y6])
+
+    line1 = np.linalg.norm(point2 - point3)
+    line2 = np.linalg.norm(point1 - point3)
+    line3 = np.linalg.norm(point1 - point2)
+    line4 = np.linalg.norm(point5 - point6)
+    line5 = np.linalg.norm(point4 - point6)
+    line6 = np.linalg.norm(point4 - point5)
+
+    angle1 = degrees(acos((line1**2 + line3**2 - line2**2) / (2 * line1 * line3)))
+    angle2 = degrees(acos((line4**2 + line6**2 - line5**2) / (2 * line4 * line6)))
+
+    #cv2.putText(frame, str(int(angle1)), (x2 +30, y2), 1, 1.5, (128,0,250), 2)
+    #cv2.putText(frame, str(int(angle2)), (x5 +30, y5), 1, 1.5, (128,0,250), 2)
+
+    if angle1 and angle2 >= 160:
+        up = True
+    if up == True and down == False and angle1 and angle2 <= 70:
+        down = True
+    if up == True and down == True and angle1 and angle2 >= 160:
+        count += 1
+        up = False
+        down = False
+    
+    if count < 3:
+        cv2.putText(frame, "Repeticiones: {}".format(count), (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 5, cv2.LINE_AA)
     else:
-        cv2.putText(frame, "Bad Form", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 5, cv2.LINE_AA)
+        cv2.putText(frame, 'Ejercicio Completado', (500, 400), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 5, cv2.LINE_AA)
+        cv2.putText(frame, 'Buen trabajo hasta la proxima', (330, 500), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 5, cv2.LINE_AA)
+        cv2.putText(frame, 'Pulsa la tecla Esc para salir', (380, 600), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 5, cv2.LINE_AA)
 
+    
 
 def main():
     
@@ -89,21 +108,14 @@ def main():
             results = pose.process(frame_rgb)
 
             if results.pose_landmarks is not None:
-                tracking_especifico(frame, results, width, height)
+                if tracking_especifico(frame, results, width, height):
+                    break
+
             cv2.imshow("Frame", frame) 
             if cv2.waitKey(1) & 0xFF == 27:
                 break
     cap.release()
     cv2.destroyAllWindows()
-
-        # if results.pose_landmarks is not None:
-        #     mp_drawing.draw_landmarks(
-        #         frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
-        #         mp_drawing.DrawingSpec(color=(128,0,250), thickness=2, circle_radius=3),
-        #         mp_drawing.DrawingSpec(color=(255,255,255), thickness=2)
-        #     )
-
-
 
 if __name__ == "__main__":
     main()
