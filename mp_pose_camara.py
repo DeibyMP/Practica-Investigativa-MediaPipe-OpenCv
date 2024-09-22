@@ -11,6 +11,7 @@ cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 window_width = 1600
 window_height = 1050
 
+#Definicion de las varibles encargadas del contador
 up = False
 down = False
 count = 0
@@ -39,21 +40,25 @@ def tracking_especifico(frame, results, width, height):
     x6 = int(results.pose_landmarks.landmark[16].x * width)
     y6 = int(results.pose_landmarks.landmark[16].y * height)
 
-    #cv2.circle(frame, (x1, y1), 10, (225, 0, 0), -1)
-    #cv2.circle(frame, (x2, y2), 10, (225, 0, 0), -1)
-    #cv2.circle(frame, (x3, y3), 10, (225, 0, 0), -1)
+#Vizualizacion de los triangulos formados por cada brazo
 
-    #cv2.circle(frame, (x4, y4), 10, (252, 252, 252), -1)
-    #cv2.circle(frame, (x5, y5), 10, (252, 252, 252), -1)
-    #cv2.circle(frame, (x6, y6), 10, (252, 252, 252), -1)
+    cv2.circle(frame, (x1, y1), 10, (225, 0, 0), -1)
+    cv2.circle(frame, (x2, y2), 10, (225, 0, 0), -1)
+    cv2.circle(frame, (x3, y3), 10, (225, 0, 0), -1)
 
-    #cv2.line(frame, (x1, y1), (x2, y2), (255, 34, 2), 3)
-    #cv2.line(frame, (x2, y2), (x3, y3), (255, 34, 2), 3)
-    #cv2.line(frame, (x3, y3), (x1, y1), (255, 34, 2), 3)
-    #cv2.line(frame, (x4, y4), (x5, y5), (255, 242, 204), 3)
-    #cv2.line(frame, (x5, y5), (x6, y6), (255, 242, 204), 3)
-    #cv2.line(frame, (x6, y6), (x4, y4), (252, 252, 252), 3)
+    cv2.circle(frame, (x4, y4), 10, (252, 252, 252), -1)
+    cv2.circle(frame, (x5, y5), 10, (252, 252, 252), -1)
+    cv2.circle(frame, (x6, y6), 10, (252, 252, 252), -1)
 
+    cv2.line(frame, (x1, y1), (x2, y2), (255, 34, 2), 3)
+    cv2.line(frame, (x2, y2), (x3, y3), (255, 34, 2), 3)
+    cv2.line(frame, (x3, y3), (x1, y1), (255, 34, 2), 3)
+    cv2.line(frame, (x4, y4), (x5, y5), (255, 242, 204), 3)
+    cv2.line(frame, (x5, y5), (x6, y6), (255, 242, 204), 3)
+    cv2.line(frame, (x6, y6), (x4, y4), (252, 252, 252), 3)
+
+# Points and Lines son las definiciones del triangulo que forma el moviimeinto de cada brazo
+# Para el calculo del angulo que Varia mientras se realiza el ejercicio
     point1 = np.array([x1, y1])
     point2 = np.array([x2, y2])
     point3 = np.array([x3, y3])
@@ -69,12 +74,18 @@ def tracking_especifico(frame, results, width, height):
     line5 = np.linalg.norm(point4 - point6)
     line6 = np.linalg.norm(point4 - point5)
 
+    #acos(θ)= a^2 + b^2 - c^2 / 2 * a * b
+
+# Angle es el calculo del angulo por medio de la funcion arcos
     angle1 = degrees(acos((line1**2 + line3**2 - line2**2) / (2 * line1 * line3)))
     angle2 = degrees(acos((line4**2 + line6**2 - line5**2) / (2 * line4 * line6)))
 
-    #cv2.putText(frame, str(int(angle1)), (x2 +30, y2), 1, 1.5, (128,0,250), 2)
-    #cv2.putText(frame, str(int(angle2)), (x5 +30, y5), 1, 1.5, (128,0,250), 2)
+#Vizualizacion del angulo formado en cada brazo
 
+    cv2.putText(frame, str(int(angle1)), (x2 +30, y2), 1, 1.5, (128,0,250), 2)
+    cv2.putText(frame, str(int(angle2)), (x5 +30, y5), 1, 1.5, (128,0,250), 2)
+
+#Condicionales para el conteo de repeticiones y la muestra de los mensajes de estado del ejercicio
     if angle1 and angle2 >= 160:
         up = True
     if up == True and down == False and angle1 and angle2 <= 70:
